@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Secure Messenger</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+
+<h2>End-to-End Encrypted Chat</h2>
+
+<input type="text" id="username" placeholder="Enter username">
+<input type="text" id="secretKey" placeholder="Enter secret key">
+
+<div id="chat" style="height:300px; overflow:auto; border:1px solid black;"></div>
+
+<input type="text" id="message" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
+
+<script>
+    const ws = new WebSocket("ws://YOUR_DOMAIN/ws");
+    const chat = document.getElementById("chat");
+
+    ws.onmessage = function(event) {
+        const key = document.getElementById("secretKey").value;
+
+        try {
+            const bytes = CryptoJS.AES.decrypt(event.data, key);
+            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (decrypted) {
+                addMessage(decrypted);
+            }
+        } catch (e) {
+            console.log("Wrong key or invalid message");
+        }
+    };
+
+    function sendMessage() {
+        const username = document.getElementById("username").value;
+        const key = document.getElementById("secretKey").value;
+        const message = document.getElementById("message").value;
+
+        const fullMessage = username + ": " + message;
+
+        const encrypted = CryptoJS.AES.encrypt(fullMessage, key).toString();
+
+        ws.send(encrypted);
+        document.getElementById("message").value = "";
+    }
+
+    function addMessage(text) {
+        const p = document.createElement("p");
+        p.textContent = text;
+        chat.appendChild(p);
+    }
+</script>
+
+</body>
+</html>
